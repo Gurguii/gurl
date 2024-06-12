@@ -11,6 +11,7 @@
 static bool ENCODE = true;
 static bool FULL = false;
 static bool SPECIAL = false;
+static url::encode::charset DESIRED_CHARSET = url::encode::charset::none;
 
 static inline int __available_on_stdin(){
   int available = 0;
@@ -32,20 +33,21 @@ static inline void usage(){
 url [OPTIONS]
 
 ** Options **
-
 -d, --decode      : Encodes all characters that may cause issues in URLs.
 -f, --full        : Encodes characters reserved in the URL syntax (e.g., '&', '+').
--s, --special     : Encodes characters that might be misinterpreted in URLs (e.g., spaces, '$').
+-s, --special     : Encodes ascii special characters  - \"%-.<>\\^_`{|}~
+-r, --reserved    : Encodes ascii reserved characters - !#$&'()*+,/:;=?@[]
 
 ** Examples **
-url <<< https://github.com/Gurguii/gpkih
-
+url -f    <<< '/my_/$foo_example' - %2f%6d%79%5f%2f%24%66%6f%6f%5f%65%78%61%6d%70%6c%65%0a
+url -r    <<< '/my_/$foo_example' - %2fmy_%2f%24foo_example
+url -s    <<< '/my_/$foo_example' - /my%5f/$foo%5fexample
+url -s -r <<< '/my_/$foo_example' - %2fmy%5f%2f%24foo%5fexample
 )");
 }
 
 
 int main(int argc, const char **args) {
-
   for(int i = 1; i < argc; ++i){
     std::string_view opt = args[i];
     if("-d" == opt || "--decode" == opt){
@@ -53,18 +55,19 @@ int main(int argc, const char **args) {
     }else if("-f" == opt || "--full" == opt){
       FULL = true;
     }else if("-s" == opt || "--special" == opt){
-      SPECIAL = true;
-    }else if("-h" == opt | "--help" == opt){
+      DESIRED_CHARSET |= url::encode::charset::special;
+    }else if("-r" == opt || "--reserved" == opt){
+      DESIRED_CHARSET |= url::encode::charset::reserved;
+    }else if("-h" == opt || "--help" == opt){
       usage(); return 0;
     }else{
       fprintf(stderr, "-- Unknown option '%s'\n", args[i]);
     }
   }
-
   int available = __available_on_stdin();
   
   if(available <= 0){
-    fprintf(stderr, "[!] Got nothing in stdin to %s\n", ENCODE ? "encode" : "decode");
+    fprintf(stderr, "[!] Got nothing in stdin to %s, use -h | --help to display help\n", ENCODE ? "encode" : "decode");
     return 1;
   }
 
@@ -81,9 +84,14 @@ int main(int argc, const char **args) {
   };
 
   std::string result;
-  
+
   if(ENCODE){
-    result = FULL ? url::encode::full(reinterpret_cast<const char*>(data), available) : url::encode::reserved(reinterpret_cast<const char*>(data), available);
+    if(FULL == false && DESIRED_CHARSET == url::encode::charset::none){
+      fprintf(stderr, "[!] No encoding option given, use -h | --help to see available options\n");
+      return 1;
+    }
+    result = FULL ? url::encode::full(reinterpret_cast<const char*>(data), available)
+                  : url::encode::partial(reinterpret_cast<const char*>(data), available, DESIRED_CHARSET);
   }else{
     result = url::decode::full(reinterpret_cast<const char*>(data), available);
   }
