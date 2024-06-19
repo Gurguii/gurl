@@ -44,10 +44,13 @@ URL encode or decode data
 ./gurl [OPTIONS]
 
 ** Options **
-Note: by default only ASCII reserved characters will be encoded <%s> 
+Note: by default the program will encode reserved characters, the -r option
+only makes sense if -s | --special is given and you also want to encode reserved characters.
+  
 -d, --decode      : Decode
--f, --full        : Encodes every character
+-r, --reserved    : Encodes ASCII reserved characters <%s>
 -s, --special     : Encodes ASCII special characters <%s>
+-f, --full        : Encodes every character
 -o, --out <file>  : Output data to file instead of stdout
 -i, --in  <file>  : Read data from file instead of stdin
  
