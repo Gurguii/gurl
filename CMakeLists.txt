@@ -15,6 +15,6 @@ endfunction()
 
 configure_platform()
 
-add_executable(u gurl.cpp)
+add_executable(gurl gurl.cpp)
 
-target_compile_features(u PRIVATE cxx_std_17)
+target_compile_features(gurl PRIVATE cxx_std_17)
