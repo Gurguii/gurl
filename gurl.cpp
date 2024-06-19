@@ -1,5 +1,4 @@
 #include "url_enc_dec.hpp"
-#include <cstdint>
 
 #ifdef _WIN32
 #include <sys/stat.h>
@@ -46,8 +45,7 @@ url -s -r <<< '/my_/$foo_example' - %2fmy%5f%2f%24foo%5fexample
 )");
 }
 
-
-int main(int argc, const char **args) {
+static int parse(int argc, const char **args){
   for(int i = 1; i < argc; ++i){
     std::string_view opt = args[i];
     if("-d" == opt || "--decode" == opt){
@@ -59,11 +57,19 @@ int main(int argc, const char **args) {
     }else if("-r" == opt || "--reserved" == opt){
       DESIRED_CHARSET |= url::encode::charset::reserved;
     }else if("-h" == opt || "--help" == opt){
-      usage(); return 0;
+      usage(); return 1;
     }else{
       fprintf(stderr, "-- Unknown option '%s'\n", args[i]);
     }
   }
+  return 0;
+}
+
+int main(int argc, const char **args) {
+  if(parse(argc, args)){
+    return -1;
+  }
+
   int available = __available_on_stdin();
   
   if(available <= 0){
@@ -71,7 +77,7 @@ int main(int argc, const char **args) {
     return 1;
   }
 
-  uint8_t* data = (uint8_t*)malloc(available);
+  unsigned char* data = (unsigned char*)malloc(available);
 
   if(data == nullptr){
     fprintf(stderr, "[!] Couldn't allocate '%i' bytes\n", available);
@@ -90,12 +96,12 @@ int main(int argc, const char **args) {
       fprintf(stderr, "[!] No encoding option given, use -h | --help to see available options\n");
       return 1;
     }
-    result = FULL ? url::encode::full(reinterpret_cast<const char*>(data), available)
-                  : url::encode::partial(reinterpret_cast<const char*>(data), available, DESIRED_CHARSET);
+    result = FULL ? url::encode::full(reinterpret_cast<const unsigned char*>(data), available, stdout)
+                  : url::encode::partial(reinterpret_cast<const unsigned char*>(data), available, DESIRED_CHARSET, stdout);
   }else{
-    result = url::decode::full(reinterpret_cast<const char*>(data), available);
+    result = url::decode::full(reinterpret_cast<const unsigned char*>(data), available, stdout);
   }
 
-  printf("%s\n",result.c_str());
+  //printf("%s\n",result.c_str());
   return 0;
 }
