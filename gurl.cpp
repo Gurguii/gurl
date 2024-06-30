@@ -2,7 +2,7 @@
 #include <cstdio>
 
 #ifdef _WIN32
-#include <sys/stat.h>
+#include <Windows.h>
 #else
 #include <sys/ioctl.h>
 #endif
@@ -18,7 +18,7 @@ static FILE *OUTFILE = stdout;
 static url::encode::charset ENCODE_CHARSET = url::encode::charset::reserved;
 
 static inline int __available_on_stdin(){
-  int available = 0;
+    unsigned long available = 0;
   #ifdef _WIN32
     static HANDLE handle = GetStdHandle(STD_INPUT_HANDLE);
     PeekNamedPipe(handle, nullptr, 0, nullptr, &available, nullptr);
@@ -36,8 +36,7 @@ static inline size_t __available_on_file(FILE *file){
 };
 
 static inline void usage(){
-  printf(R"(
-** Gurl **
+  printf(R"(** Gurl **
 URL encode or decode data
 
 ** Usage **
