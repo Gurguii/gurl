@@ -1,5 +1,7 @@
 #include "url_enc_dec.hpp"
 #include <cstdio>
+#include <errno.h>
+#include <string.h>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -18,7 +20,7 @@ static FILE *OUTFILE = stdout;
 static url::encode::charset ENCODE_CHARSET = url::encode::charset::reserved;
 
 static inline int __available_on_stdin(){
-    unsigned long available = 0;
+  unsigned long available = 0;
   #ifdef _WIN32
     static HANDLE handle = GetStdHandle(STD_INPUT_HANDLE);
     PeekNamedPipe(handle, nullptr, 0, nullptr, &available, nullptr);
@@ -28,7 +30,7 @@ static inline int __available_on_stdin(){
   return available;
 }
 
-static inline size_t __available_on_file(FILE *file){
+static inline long __available_on_file(FILE *file){
   fseek(file, 0, SEEK_END);
   long av = ftell(file);
   fseek(file, 0, SEEK_SET);
@@ -47,17 +49,17 @@ Note: by default the program will encode reserved characters, the -r option
 only makes sense if -s | --special is given and you also want to encode reserved characters.
   
 -d, --decode      : Decode
--r, --reserved    : Encodes ASCII reserved characters <%s>
--s, --special     : Encodes ASCII special characters <%s>
+-r, --reserved    : Encodes ASCII reserved characters %s
+-s, --special     : Encodes ASCII special characters %s
 -f, --full        : Encodes every character
 -o, --out <file>  : Output data to file instead of stdout
 -i, --in  <file>  : Read data from file instead of stdin
  
 ** Examples **
-gurl       <<< '/my_/$foo_example' - %%2fmy_%%2f%%24foo_example
-gurl -s    <<< '/my_/$foo_example' - /my%%5f/$foo%%5fexample
-gurl -f    <<< '/my_/$foo_example' - %%2f%%6d%%79%%5f%%2f%%24%%66%%6f%%6f%%5f%%65%%78%%61%%6d%%70%%6c%%65%%0a
-gurl -r -s <<< '/my_/$foo_example' - %%2fmy%%5f%%2f%%24foo%%5fexample
+echo '/my_/$foo_example' | gurl       => %%2fmy_%%2f%%24foo_example
+echo '/my_/$foo_example' | gurl -s    => /my%%5f/$foo%%5fexample
+echo '/my_/$foo_example' | gurl -f    => %%2f%%6d%%79%%5f%%2f%%24%%66%%6f%%6f%%5f%%65%%78%%61%%6d%%70%%6c%%65%%0a
+echo '/my_/$foo_example' | gurl -r -s => %%2fmy%%5f%%2f%%24foo%%5fexample
 gurl -f -i /etc/passwd -o encoded
 gurl -d -i encoded -o decoded
 )",ASCII_RESERVED, ASCII_SPECIAL);
@@ -89,7 +91,8 @@ static int parse(int argc, const char **args){
       }
       OUTFILE = fopen(args[++i], "wb");
       if(OUTFILE == nullptr){
-        fprintf(stderr, "-- Couldn't open OUTPUT file\n"); return 1;
+        perror("-- Couldn't open OUTPUT file");
+        return 1;
       }
     }else if("-i" == opt || "--infile" == opt){
       if(i+1 == argc){
@@ -97,7 +100,8 @@ static int parse(int argc, const char **args){
       }
       INFILE = fopen(args[++i], "rb");
       if(INFILE == nullptr){
-        fprintf(stderr, "-- Couldn't open INPUT file\n"); return 1;
+        perror("-- Couldn't open INPUT file");
+        return 1;
       }
     }else{
       fprintf(stderr, "-- Unknown option '%s'\n", args[i]);
@@ -112,7 +116,7 @@ int main(int argc, const char **args) {
     return -1;
   }
 
-  long available = 0;
+  long long available = 0;
 
   available = INFILE == stdin ? __available_on_stdin() : __available_on_file(INFILE);
   
@@ -124,13 +128,15 @@ int main(int argc, const char **args) {
   unsigned char* data = (unsigned char*)malloc(available);
 
   if(data == nullptr){
-    fprintf(stderr, "[!] Couldn't allocate '%lu' bytes\n", available);
+    fprintf(stderr, "[!] Couldn't allocate enough memory\n");
     return 1;
   }
 
   if(fread(data, available, 1, INFILE) != 1){
-    fprintf(stderr, "[!] Copied less bytes to buffer than available in stdin\n");
-    return 1;
+    if(ferror(INFILE)){
+      perror("Reading data to buffer");
+      return 1;
+    }
   };
 
   std::string result;

@@ -7,7 +7,7 @@ static constexpr const int   ASCII_RESERVED_COUNT = 18;
 
 static constexpr const char *ASCII_SPECIAL = "\"%-.<>\\^_`{|}~";
 static constexpr const int   ASCII_SPECIAL_COUNT = 14;
-static constexpr const char *hex_vals = "0123456789abcdef";
+static constexpr const char *hex_vals = "0123456789ABCDEF";
 
 static inline void htoi(const unsigned char *byte, std::ostringstream &buff){
   const unsigned char &first_half = byte[0];
