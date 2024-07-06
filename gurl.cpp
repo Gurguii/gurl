@@ -8,6 +8,13 @@
 #include <sys/ioctl.h>
 #endif
 
+#ifndef GURL_MACROS
+#define ASCII_RESERVED url::charset::ascii_reserved
+#define ASCII_RESERVED_COUNT url::charset::ascii_reserved_count
+#define ASCII_SPECIAL url::charset::ascii_special
+#define ASCII_SPECIAL_COUNT url::charset::ascii_special_count
+#endif
+
 /* Variables */
 static bool ENCODE   = true;
 static bool FULL     = false;
@@ -15,12 +22,6 @@ static bool SPECIAL  = false;
 
 static FILE *INFILE  = stdin;
 static FILE *OUTFILE = stdout;
-
-inline static constexpr const char *ASCII_RESERVED = "!#$&'()*+,/:;=?@[]";
-inline static constexpr const int ASCII_RESERVED_COUNT = 18;
-
-inline static constexpr const char *ASCII_SPECIAL = "\"%-.<>\\^_`{|}~";
-inline static constexpr const int ASCII_SPECIAL_COUNT = 14;
 
 static char ENCODE_CHARSET[255]{};
 static int ENCODE_CHARSET_SIZE = 0;
@@ -130,6 +131,7 @@ static int parse(int argc, const char **args){
 
   if(ENCODE_CHARSET_SIZE == 0){
     memcpy(ENCODE_CHARSET, ASCII_RESERVED, ASCII_RESERVED_COUNT);
+    ENCODE_CHARSET_SIZE = ASCII_RESERVED_COUNT;
   }
   
   return 0;
@@ -166,13 +168,11 @@ int main(int argc, const char **args) {
     // so no worries
   };
 
-  std::string result;
-
   if(ENCODE){
-    FULL ? url::encode::full(data, available, OUTFILE)
-         : url::encode::partial(data, available, ENCODE_CHARSET,ENCODE_CHARSET_SIZE, OUTFILE);
+    FULL ? url::encoding::encode(reinterpret_cast<const char*>(data), available, OUTFILE)
+         : url::encoding::encode(reinterpret_cast<const char*>(data), available, ENCODE_CHARSET,ENCODE_CHARSET_SIZE, OUTFILE);
   }else{
-    url::decode::full(reinterpret_cast<const char*>(data), available, OUTFILE);
+    url::decoding::decode(reinterpret_cast<const char*>(data), available, OUTFILE);
   }
 
   if(INFILE != stdin){
