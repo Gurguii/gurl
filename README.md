@@ -36,18 +36,25 @@ make
 | -c, --charset \<str> | Custom charset to encode |  
 
 ----
-## EXAMPLES
+## EXAMPLES  
+
 Encodes only the reserved characters, leaving the unreserved characters as they are
-- `echo '/my_/$foo_example' | gurl` => `%%2fmy_%%2f%%24foo_example`  
+- `echo '/my_/$foo_example' | gurl` => `%%2fmy_%%2f%%24foo_example`
+
 Encodes only the special characters.
-- `echo '/my_/$foo_example' | gurl -s` => `/my%%5f/$foo%%5fexample`  
+- `echo '/my_/$foo_example' | gurl -s` => `/my%%5f/$foo%%5fexample`
+
 Encodes every character in the string.  
-- `echo '/my_/$foo_example' | gurl -f` => `%%2f%%6d%%79%%5f%%2f%%24%%66%%6f%%6f%%5f%%65%%78%%61%%6d%%70%%6c%%65%%0a`  
+- `echo '/my_/$foo_example' | gurl -f` => `%%2f%%6d%%79%%5f%%2f%%24%%66%%6f%%6f%%5f%%65%%78%%61%%6d%%70%%6c%%65%%0a`
+
 Encodes the custom charset "fo$".
-- `echo '/my_/$foo_example' | gurl -c fo$` => `/my_/%%24%%66%%6f%%6f_example`  
-Encodes both reserved and special characters.
-- `echo '/my_/$foo_example' | gurl -r -s` => `%%2fmy%%5f%%2f%%24foo%%5fexample`  
-Reads the file `/etc/passwd`, fully encodes its contents, and writes the output to a new file named `encoded`.
+- `echo '/my_/$foo_example' | gurl -c fo$` => `/my_/%%24%%66%%6f%%6f_example`
+
+Encodes both reserved and special characters.  
+- `echo '/my_/$foo_example' | gurl -r -s` => `%%2fmy%%5f%%2f%%24foo%%5fexample`
+
+Reads the file `/etc/passwd`, fully encodes its contents, and writes the output to a new file named `encoded`.  
 - `gurl -f -i /etc/passwd -o encoded`
-Reads the file `encoded`, decodes its contents, and writes the output to a new file named `decoded`.
+
+Reads the file `encoded`, decodes its contents, and writes the output to a new file named `decoded`.  
 - `gurl -d -i encoded -o decoded`
